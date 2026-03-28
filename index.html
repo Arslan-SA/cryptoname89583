@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="StarCoin - Your premium cryptocurrency dashboard for managing coins, e-wallet, and team referrals">
+    <title>StarCoin | Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- ============================================ -->
+    <!-- LOGIN / REGISTER SCREEN                      -->
+    <!-- ============================================ -->
+    <div class="login-screen" id="loginScreen">
+        <!-- LEFT PANEL: Auth Forms -->
+        <div class="login-left-panel">
+            <div class="login-left-inner">
+                <div class="login-logo">
+                    <span class="login-star">★</span>
+                    <div class="login-brand">
+                        <span class="login-brand-name">Star</span>
+                        <span class="login-brand-coin">Coin</span>
+                    </div>
+                </div>
+                <p class="login-subtitle">Your gateway to the decentralized future</p>
+
+                <div class="login-tabs">
+                    <button class="login-tab active" data-tab="login" id="tabLogin">Sign In</button>
+                    <button class="login-tab" data-tab="register" id="tabRegister">Sign Up</button>
+                </div>
+
+                <!-- Login Form -->
+                <form class="login-form" id="loginForm">
+                    <div class="login-field">
+                        <span class="material-icons-outlined field-icon">email</span>
+                        <input type="email" id="loginEmail" placeholder="Email Address" required autocomplete="email">
+                    </div>
+                    <div class="login-field">
+                        <span class="material-icons-outlined field-icon">lock</span>
+                        <input type="password" id="loginPassword" placeholder="Password" required autocomplete="current-password">
+                    </div>
+                    <div class="login-extras">
+                        <label class="login-remember"><input type="checkbox"> Remember me</label>
+                        <a href="#" class="login-forgot">Forgot password?</a>
+                    </div>
+                    <button type="submit" class="login-btn" id="loginBtn">
+                        <span>Sign In</span>
+                        <span class="material-icons-outlined">arrow_forward</span>
+                    </button>
+                    <p class="login-error" id="loginError"></p>
+                </form>
+
+                <!-- Register Form -->
+                <form class="login-form hidden" id="registerForm">
+                    <div class="login-field">
+                        <span class="material-icons-outlined field-icon">person</span>
+                        <input type="text" id="regName" placeholder="Full Name" required>
+                    </div>
+                    <div class="login-field">
+                        <span class="material-icons-outlined field-icon">email</span>
+                        <input type="email" id="regEmail" placeholder="Email Address" required>
+                    </div>
+                    <div class="login-field">
+                        <span class="material-icons-outlined field-icon">phone</span>
+                        <input type="tel" id="regPhone" placeholder="Phone Number" required>
+                    </div>
+                    <div class="login-field">
+                        <span class="material-icons-outlined field-icon">lock</span>
+                        <input type="password" id="regPassword" placeholder="Password" required>
+                    </div>
+                    <div class="login-field">
+                        <span class="material-icons-outlined field-icon">person_add</span>
+                        <input type="text" id="regReferral" placeholder="Referral Code (optional)">
+                    </div>
+                    <button type="submit" class="login-btn" id="registerBtn">
+                        <span>Create Account</span>
+                        <span class="material-icons-outlined">arrow_forward</span>
+                    </button>
+                    <p class="login-error" id="registerError"></p>
+                </form>
+
+                <div class="login-footer-text">
+                    <p>★ Building the future, one coin at a time.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL: Galaxy Canvas -->
+        <div class="login-right-panel" id="galaxyPanel">
+            <canvas id="galaxyCanvas"></canvas>
+            <div class="galaxy-overlay-text">
+                <h2>Explore the <span>Universe</span></h2>
+                <p>Move your cursor to discover the stars</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- APP WRAPPER (hidden until login)             -->
+    <!-- ============================================ -->
+    <div class="app-wrapper hidden" id="appWrapper">
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-jh">★</span>
+                    <span class="logo-text">Star<br><span class="logo-shine">Coin</span></span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul class="nav-list">
+                    <li class="nav-item active" data-page="dashboard">
+                        <a href="#" class="nav-link">
+                            <span class="material-icons-outlined">dashboard</span>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item has-submenu" data-page="profile">
+                        <a href="#" class="nav-link">
+                            <span class="material-icons-outlined">person</span>
+                            <span class="nav-text">Profile</span>
+                            <span class="material-icons-outlined nav-arrow">chevron_right</span>
+                        </a>
+                        <ul class="submenu">
+                            <li><a href="#" data-page="profile-view">View Profile</a></li>
+                            <li><a href="#" data-page="profile-edit">Edit Profile</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item has-submenu" data-page="team">
+                        <a href="#" class="nav-link">
+                            <span class="material-icons-outlined">group</span>
+                            <span class="nav-text">Team</span>
+                            <span class="material-icons-outlined nav-arrow">chevron_right</span>
+                        </a>
+                        <ul class="submenu">
+                            <li><a href="#" data-page="team-tree">Referral Tree</a></li>
+                            <li><a href="#" data-page="team-direct">Direct Referrals</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item" data-page="coin-buy">
+                        <a href="#" class="nav-link">
+                            <span class="material-icons-outlined">toll</span>
+                            <span class="nav-text">Buy StarCoin</span>
+                        </a>
+                    </li>
+                    <li class="nav-item has-submenu" data-page="ewallet">
+                        <a href="#" class="nav-link">
+                            <span class="material-icons-outlined">account_balance_wallet</span>
+                            <span class="nav-text">E-Wallet</span>
+                            <span class="material-icons-outlined nav-arrow">chevron_right</span>
+                        </a>
+                        <ul class="submenu">
+                            <li><a href="#" data-page="ewallet-request">Add Coins</a></li>
+                            <li><a href="#" data-page="ewallet-status">Coin Balance</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item has-submenu" data-page="documents">
+                        <a href="#" class="nav-link">
+                            <span class="material-icons-outlined">description</span>
+                            <span class="nav-text">Documents</span>
+                            <span class="material-icons-outlined nav-arrow">chevron_right</span>
+                        </a>
+                        <ul class="submenu">
+                            <li><a href="#" data-page="documents-welcome">Welcome Letter</a></li>
+                            <li><a href="#" data-page="documents-bank">Bank Account</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item" data-page="promotion">
+                        <a href="#" class="nav-link">
+                            <span class="material-icons-outlined">campaign</span>
+                            <span class="nav-text">Promotion</span>
+                        </a>
+                    </li>
+                    <li class="nav-item" data-page="news">
+                        <a href="#" class="nav-link">
+                            <span class="material-icons-outlined">feed</span>
+                            <span class="nav-text">News</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="#" class="nav-link logout-link" id="logoutBtn">
+                    <span class="material-icons-outlined">power_settings_new</span>
+                    <span class="nav-text">Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Mobile Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <!-- Top Bar -->
+            <header class="topbar">
+                <button class="menu-toggle" id="menuToggle">
+                    <span class="material-icons-outlined">menu</span>
+                </button>
+                <div class="breadcrumb">
+                    <a href="#" class="breadcrumb-home">Home</a>
+                    <span class="breadcrumb-separator">›</span>
+                    <span class="breadcrumb-current" id="breadcrumbCurrent">Dashboard</span>
+                </div>
+                <div class="topbar-actions">
+                    <div class="notification-bell">
+                        <span class="material-icons-outlined">notifications</span>
+                        <span class="notification-badge">1</span>
+                    </div>
+                    <div class="user-avatar">
+                        <span class="material-icons-outlined">account_circle</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Pages Container -->
+            <div class="pages-container">
+
+                <!-- ===== DASHBOARD PAGE ===== -->
+                <section class="page active" id="page-dashboard">
+                    <div class="page-header">
+                        <h1 id="welcomeHeading">Welcome Back!</h1>
+                        <p class="page-subtitle">Here's what's happening with your StarCoin account today.</p>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card" style="--delay: 0.1s">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                <span class="material-icons-outlined">toll</span>
+                            </div>
+                            <div class="stat-info">
+                                <h3>StarCoin Balance</h3>
+                                <p class="stat-value" data-prefix="★ " data-count="1250">0</p>
+                                <span class="stat-change positive">+12.5%</span>
+                            </div>
+                        </div>
+                        <div class="stat-card" style="--delay: 0.2s">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                <span class="material-icons-outlined">group</span>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Team Size</h3>
+                                <p class="stat-value" data-count="2" id="teamSizeStat">0</p>
+                                <span class="stat-change positive">Growing</span>
+                            </div>
+                        </div>
+                        <div class="stat-card" style="--delay: 0.3s">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                                <span class="material-icons-outlined">link</span>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Referrals</h3>
+                                <p class="stat-value" data-count="2" id="referralsStat">0</p>
+                                <span class="stat-change neutral">Active</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <div class="card chart-card animate-in" style="--delay: 0.5s">
+                            <div class="card-header">
+                                <h2>Coin Overview</h2>
+                                <select class="card-filter">
+                                    <option>Last 6 Months</option>
+                                    <option>Last Year</option>
+                                </select>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="salesChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="card activity-card animate-in" style="--delay: 0.6s">
+                            <div class="card-header">
+                                <h2>Recent Activity</h2>
+                            </div>
+                            <div class="activity-list">
+                                <div class="activity-item">
+                                    <div class="activity-dot" style="background: #43e97b"></div>
+                                    <div class="activity-content">
+                                        <p>Welcome to <strong>StarCoin</strong>!</p>
+                                        <span class="activity-time">Just now</span>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-dot" style="background: #4facfe"></div>
+                                    <div class="activity-content">
+                                        <p>Your referral link is <strong>ready</strong></p>
+                                        <span class="activity-time">Just now</span>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-dot" style="background: #667eea"></div>
+                                    <div class="activity-content">
+                                        <p>User A <strong>joined</strong> your network</p>
+                                        <span class="activity-time">Mar 20, 2026</span>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-dot" style="background: #f093fb"></div>
+                                    <div class="activity-content">
+                                        <p>User B joined via <strong>User A</strong></p>
+                                        <span class="activity-time">Mar 22, 2026</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Referral Link Card -->
+                    <div class="card referral-card animate-in" style="--delay: 0.7s">
+                        <div class="card-header">
+                            <h2>Your Referral Link</h2>
+                        </div>
+                        <div class="referral-link-box">
+                            <input type="text" id="referralLinkInput" readonly class="form-input referral-input">
+                            <button class="btn btn-primary" id="copyReferralBtn">
+                                <span class="material-icons-outlined">content_copy</span>
+                                Copy
+                            </button>
+                        </div>
+                        <p class="referral-hint">Share this link to invite others and build your team!</p>
+                    </div>
+
+                    <!-- User ID Card -->
+                    <div class="card user-id-card animate-in" style="--delay: 0.8s">
+                        <div class="card-header">
+                            <h2>Your StarCoin User ID</h2>
+                        </div>
+                        <div class="id-form">
+                            <label for="iboUserId">Your User ID :</label>
+                            <input type="text" id="iboUserId" value="" readonly class="form-input">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== COIN BUY PAGE (StarCoin Only) ===== -->
+                <section class="page" id="page-coin-buy">
+                    <div class="page-header">
+                        <h1>Buy StarCoin</h1>
+                        <p class="page-subtitle">Purchase StarCoin with USD. Quick, easy, and instant.</p>
+                    </div>
+
+                    <!-- Live Ticker - StarCoin Only -->
+                    <div class="coin-ticker animate-in" style="--delay: 0.1s">
+                        <div class="ticker-item star-ticker">
+                            <span class="ticker-symbol">★ STAR</span>
+                            <span class="ticker-change positive">+12.3%</span>
+                        </div>
+                        <div class="ticker-item">
+                            <span class="ticker-fill">StarCoin — The future of decentralized rewards</span>
+                        </div>
+                    </div>
+
+                    <!-- StarCoin Hero Card -->
+                    <div class="starcoin-hero animate-in" style="--delay: 0.2s">
+                        <div class="starcoin-hero-left">
+                            <div class="starcoin-big-icon">★</div>
+                            <div class="starcoin-hero-info">
+                                <h2>StarCoin <span class="coin-badge">STAR</span></h2>
+                                <p class="starcoin-hero-price">1 USD = 150 STAR <span class="ticker-change positive">+12.3%</span></p>
+                                <p class="starcoin-hero-desc">The native coin of the StarCoin ecosystem. Buy, hold, and earn rewards through your referral network.</p>
+                            </div>
+                        </div>
+                        <div class="starcoin-buy-section">
+                            <div class="buy-amount-group">
+                                <label>Amount (USD)</label>
+                                <div class="coin-buy-input">
+                                    <span class="coin-input-prefix">$</span>
+                                    <input type="number" id="starAmountInput" placeholder="Enter amount" class="coin-amount-input" min="1" value="100">
+                                </div>
+                            </div>
+                            <div class="buy-receive-group">
+                                <label>You Receive</label>
+                                <div class="receive-display">
+                                    <span class="receive-amount" id="starReceiveAmount">~15,000 STAR</span>
+                                </div>
+                            </div>
+                            <div class="buy-packages">
+                                <button class="pkg-btn" data-amount="50">$50</button>
+                                <button class="pkg-btn active" data-amount="100">$100</button>
+                                <button class="pkg-btn" data-amount="250">$250</button>
+                                <button class="pkg-btn" data-amount="500">$500</button>
+                                <button class="pkg-btn" data-amount="1000">$1000</button>
+                            </div>
+                            <button class="btn btn-coin-buy-hero" id="buyStarBtn">
+                                <span class="material-icons-outlined">shopping_cart</span>
+                                Buy StarCoin
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="coin-stats-row animate-in" style="--delay: 0.3s">
+                        <div class="coin-stat-item">
+                            <span class="coin-stat-label">Market Cap</span>
+                            <span class="coin-stat-value">$8.5M</span>
+                        </div>
+                        <div class="coin-stat-item">
+                            <span class="coin-stat-label">24h Volume</span>
+                            <span class="coin-stat-value">$1.2M</span>
+                        </div>
+                        <div class="coin-stat-item">
+                            <span class="coin-stat-label">Total Supply</span>
+                            <span class="coin-stat-value">10M STAR</span>
+                        </div>
+                        <div class="coin-stat-item">
+                            <span class="coin-stat-label">All-Time High</span>
+                            <span class="coin-stat-value">$1.24</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== TEAM - REFERRAL TREE PAGE ===== -->
+                <section class="page" id="page-team">
+                    <div class="page-header">
+                        <h1>Referral Tree</h1>
+                        <p class="page-subtitle">Your network flow tree. Grow your team by sharing your referral link.</p>
+                    </div>
+                    <div class="card animate-in" style="--delay: 0.1s">
+                        <div class="card-header">
+                            <h2>Network Tree</h2>
+                        </div>
+                        <div class="tree-container" id="treeContainer">
+                            <!-- Tree is rendered by JavaScript -->
+                        </div>
+                    </div>
+                </section>
+
+                <section class="page" id="page-team-tree">
+                    <div class="page-header">
+                        <h1>Referral Tree</h1>
+                        <p class="page-subtitle">Your network flow tree. Grow your team by sharing your referral link.</p>
+                    </div>
+                    <div class="card animate-in" style="--delay: 0.1s">
+                        <div class="card-header">
+                            <h2>Network Tree</h2>
+                        </div>
+                        <div class="tree-container" id="treeContainerPage">
+                            <!-- Tree is rendered by JavaScript -->
+                        </div>
+                    </div>
+                </section>
+
+                <section class="page" id="page-team-direct">
+                    <div class="page-header">
+                        <h1>Direct Referrals</h1>
+                        <p class="page-subtitle">People you've directly referred to StarCoin.</p>
+                    </div>
+                    <div class="card table-card animate-in" style="--delay: 0.1s">
+                        <div class="card-header">
+                            <h2>Your Direct Team</h2>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table" id="directTeamTable">
+                                <thead>
+                                    <tr>
+                                        <th>SR.NO</th>
+                                        <th>Name</th>
+                                        <th>User ID</th>
+                                        <th>Joined</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="directTeamBody">
+                                    <tr>
+                                        <td>1</td>
+                                        <td>User A</td>
+                                        <td>SC482910</td>
+                                        <td>Mar 20, 2026</td>
+                                        <td><span class="badge badge-success">Active</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== E-WALLET PAGE ===== -->
+                <section class="page" id="page-ewallet">
+                    <div class="page-header">
+                        <h1>E-Wallet</h1>
+                        <p class="page-subtitle">Manage your StarCoin wallet and transactions.</p>
+                    </div>
+                    <div class="card animate-in" style="--delay: 0.1s">
+                        <div class="card-header">
+                            <h2>StarCoin User ID</h2>
+                        </div>
+                        <div class="id-form">
+                            <label for="ewalletIboId">Your User ID :</label>
+                            <input type="text" id="ewalletIboId" value="" readonly class="form-input">
+                            <button class="btn btn-primary">
+                                <span class="material-icons-outlined">check</span>
+                                Submit
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Add Coins Page -->
+                <section class="page" id="page-ewallet-request">
+                    <div class="page-header">
+                        <h1>Add Coins</h1>
+                        <p class="page-subtitle">Submit a payment request to credit StarCoins to your wallet.</p>
+                    </div>
+                    <div class="card form-card animate-in">
+                        <div class="card-header">
+                            <h2>Coin Credit Request</h2>
+                        </div>
+                        <form class="request-form" id="ewalletRequestForm">
+                            <div class="form-group">
+                                <label>My User ID :</label>
+                                <input type="text" id="ewalletReqUserId" value="" readonly class="form-input readonly">
+                            </div>
+                            <div class="form-group">
+                                <label>Name :</label>
+                                <input type="text" id="ewalletReqName" value="" readonly class="form-input readonly">
+                            </div>
+                            <div class="form-group">
+                                <label>Amount (★ StarCoin) :</label>
+                                <input type="number" class="form-input" placeholder="Enter coin amount">
+                            </div>
+                            <div class="form-group">
+                                <label>Mode of Payment :</label>
+                                <select class="form-input form-select">
+                                    <option>Select Mode Of Payment</option>
+                                    <option>NEFT</option>
+                                    <option>RTGS</option>
+                                    <option>IMPS</option>
+                                    <option>UPI</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Reference No. :</label>
+                                <input type="text" class="form-input" placeholder="Enter reference number">
+                            </div>
+                            <p class="form-disclaimer">I request you to kindly credit the above StarCoins to my E-Wallet upon payment confirmation.</p>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <span class="material-icons-outlined">send</span>
+                                Submit Request
+                            </button>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- Coin Balance Page -->
+                <section class="page" id="page-ewallet-status">
+                    <div class="page-header">
+                        <h1>Coin Balance</h1>
+                        <p class="page-subtitle">View your current StarCoin balance and transaction history.</p>
+                    </div>
+                    <div class="card animate-in" style="--delay: 0.1s">
+                        <div class="wallet-balance-display">
+                            <span class="wallet-balance-label">Current Balance</span>
+                            <span class="wallet-balance-amount">★ 500</span>
+                            <span class="wallet-balance-usd">≈ $425.00 USD</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== DOCUMENTS - WELCOME LETTER ===== -->
+                <section class="page" id="page-documents-welcome">
+                    <div class="page-header">
+                        <h1>Welcome Letter</h1>
+                        <p class="page-subtitle">Your personalized welcome letter from StarCoin.</p>
+                    </div>
+                    <div class="card welcome-letter-card animate-in" style="--delay: 0.1s">
+                        <div class="welcome-letter" id="welcomeLetter">
+                            <div class="letter-header">
+                                <div class="letter-logo">
+                                    <span class="letter-star">★</span>
+                                    <span class="letter-brand">StarCoin</span>
+                                </div>
+                                <div class="letter-date" id="letterDate"></div>
+                            </div>
+                            <div class="letter-body">
+                                <p class="letter-greeting">Dear <strong id="letterUserName">User</strong>,</p>
+                                <p>Welcome to the <strong>StarCoin</strong> family! We are thrilled to have you join our growing community of forward-thinking individuals who believe in the power of decentralized rewards.</p>
+                                <p>Your unique User ID is: <strong id="letterUserId">SC000000</strong></p>
+                                <p>As a member of the StarCoin ecosystem, you now have access to:</p>
+                                <ul class="letter-benefits">
+                                    <li>Purchase and hold StarCoin (STAR) tokens</li>
+                                    <li>Build your referral network and earn rewards</li>
+                                    <li>Access exclusive promotions and bonuses</li>
+                                    <li>Track your team growth with our visual referral tree</li>
+                                    <li>Manage your digital wallet with ease</li>
+                                </ul>
+                                <p>Your unique referral link has been generated. Share it with friends and family to grow your network and earn StarCoin rewards!</p>
+                                <p>We look forward to your success in the StarCoin community.</p>
+                                <div class="letter-signoff">
+                                    <p>Warm Regards,</p>
+                                    <p class="letter-signature">The StarCoin Team</p>
+                                    <p class="letter-tagline">★ Building the future, one coin at a time.</p>
+                                </div>
+                            </div>
+                            <div class="letter-footer">
+                                <span>www.starcoin.com</span>
+                                <span>support@starcoin.com</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== DOCUMENTS - BANK ACCOUNT ===== -->
+                <section class="page" id="page-documents-bank">
+                    <div class="page-header">
+                        <h1>Bank Account Details</h1>
+                        <p class="page-subtitle">Company bank account information for payments.</p>
+                    </div>
+                    <div class="card bank-card animate-in">
+                        <div class="bank-details-container">
+                            <div class="bank-logo-section">
+                                <div class="company-logo-bank">
+                                    <span class="logo-jh-large">★</span>
+                                    <span class="logo-text-large">Star<br>Coin</span>
+                                </div>
+                                <div class="bank-brand">
+                                    <span class="material-icons-outlined bank-icon">account_balance</span>
+                                    <span class="icici-text">ICICI Bank</span>
+                                </div>
+                                <div class="account-type-badge">
+                                    CURRENT ACCOUNT DETAILS
+                                </div>
+                            </div>
+                            <div class="bank-info-box">
+                                <div class="bank-info-row">
+                                    <span class="bank-label">COMPANY</span>
+                                    <span class="bank-value">STARCOIN PRIVATE LIMITED</span>
+                                </div>
+                                <div class="bank-info-row">
+                                    <span class="bank-label">ACCOUNT NO.</span>
+                                    <span class="bank-value">163505000979</span>
+                                </div>
+                                <div class="bank-info-row">
+                                    <span class="bank-label">BRANCH</span>
+                                    <span class="bank-value">LOHARDAGGA</span>
+                                </div>
+                                <div class="bank-info-row">
+                                    <span class="bank-label">IFSC</span>
+                                    <span class="bank-value">ICIC0001635</span>
+                                </div>
+                            </div>
+                            <div class="bank-footer">
+                                <span>+91-8884635989</span>
+                                <span>info@starcoin.com</span>
+                                <span>support@starcoin.com</span>
+                                <span>www.starcoin.com</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== PROMOTION PAGE ===== -->
+                <section class="page" id="page-promotion">
+                    <div class="page-header">
+                        <h1>Promotions</h1>
+                        <p class="page-subtitle">Current offers and promotional campaigns.</p>
+                    </div>
+                    <div class="promotions-grid">
+                        <div class="promo-card animate-in" style="--delay: 0.1s">
+                            <div class="promo-banner" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                <span class="promo-tag">HOT</span>
+                                <h3>Double StarCoin Week</h3>
+                                <p>Get double StarCoins on all purchases this week!</p>
+                            </div>
+                            <div class="promo-details">
+                                <span class="promo-validity">Valid till: Apr 5, 2026</span>
+                                <button class="btn btn-outline btn-sm">Learn More</button>
+                            </div>
+                        </div>
+                        <div class="promo-card animate-in" style="--delay: 0.2s">
+                            <div class="promo-banner" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                <span class="promo-tag">NEW</span>
+                                <h3>Referral Bonus</h3>
+                                <p>Earn ★ 50 StarCoins for every new member you refer!</p>
+                            </div>
+                            <div class="promo-details">
+                                <span class="promo-validity">Valid till: Jun 30, 2026</span>
+                                <button class="btn btn-outline btn-sm">Learn More</button>
+                            </div>
+                        </div>
+                        <div class="promo-card animate-in" style="--delay: 0.3s">
+                            <div class="promo-banner" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                                <span class="promo-tag">EARN</span>
+                                <h3>Team Growth Bonus</h3>
+                                <p>Build a team of 10+ and unlock ★ 500 StarCoin bonus!</p>
+                            </div>
+                            <div class="promo-details">
+                                <span class="promo-validity">Ongoing</span>
+                                <button class="btn btn-outline btn-sm">Learn More</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== NEWS PAGE (StarCoin Only) ===== -->
+                <section class="page" id="page-news">
+                    <div class="page-header">
+                        <h1>StarCoin News</h1>
+                        <p class="page-subtitle">Latest updates from the StarCoin ecosystem.</p>
+                    </div>
+                    <div class="news-grid">
+                        <div class="news-card animate-in" style="--delay: 0.1s">
+                            <div class="news-image" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                                <span class="material-icons-outlined">trending_up</span>
+                            </div>
+                            <div class="news-content">
+                                <span class="news-date">Mar 25, 2026</span>
+                                <h3>StarCoin Reaches $0.85 — New Monthly High!</h3>
+                                <p>StarCoin has achieved a new monthly high, surging 12.3% this week. Analysts attribute the growth to increased platform adoption and referral activity.</p>
+                                <a href="#" class="news-link">Read More →</a>
+                            </div>
+                        </div>
+                        <div class="news-card animate-in" style="--delay: 0.2s">
+                            <div class="news-image" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                <span class="material-icons-outlined">rocket_launch</span>
+                            </div>
+                            <div class="news-content">
+                                <span class="news-date">Mar 18, 2026</span>
+                                <h3>StarCoin Platform V2.0 Launched</h3>
+                                <p>We're excited to announce the launch of StarCoin Platform V2.0 with a brand new dashboard, referral tree visualization, and improved user experience.</p>
+                                <a href="#" class="news-link">Read More →</a>
+                            </div>
+                        </div>
+                        <div class="news-card animate-in" style="--delay: 0.3s">
+                            <div class="news-image" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                <span class="material-icons-outlined">groups</span>
+                            </div>
+                            <div class="news-content">
+                                <span class="news-date">Mar 10, 2026</span>
+                                <h3>10,000 Users Milestone Achieved</h3>
+                                <p>The StarCoin community has crossed 10,000 registered users! Thank you for being part of this incredible journey. More rewards are on the way.</p>
+                                <a href="#" class="news-link">Read More →</a>
+                            </div>
+                        </div>
+                        <div class="news-card animate-in" style="--delay: 0.4s">
+                            <div class="news-image" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
+                                <span class="material-icons-outlined">update</span>
+                            </div>
+                            <div class="news-content">
+                                <span class="news-date">Coming Soon</span>
+                                <h3>More News Coming Soon</h3>
+                                <p>Stay tuned for more exciting updates from the StarCoin ecosystem. We have big announcements planned for the coming weeks!</p>
+                                <a href="#" class="news-link">Stay Updated →</a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Profile View (placeholder) -->
+                <section class="page" id="page-profile-view">
+                    <div class="page-header">
+                        <h1>View Profile</h1>
+                        <p class="page-subtitle">Your account details.</p>
+                    </div>
+                    <div class="card animate-in" style="--delay: 0.1s">
+                        <div class="profile-view-card">
+                            <div class="profile-avatar-big">
+                                <span class="material-icons-outlined">account_circle</span>
+                            </div>
+                            <div class="profile-details" id="profileDetails">
+                                <!-- Filled by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="page" id="page-profile-edit">
+                    <div class="page-header">
+                        <h1>Edit Profile</h1>
+                        <p class="page-subtitle">Update your account information.</p>
+                    </div>
+                    <div class="card form-card animate-in" style="--delay: 0.1s">
+                        <div class="card-header">
+                            <h2>Edit Details</h2>
+                        </div>
+                        <form class="request-form" id="editProfileForm">
+                            <div class="form-group">
+                                <label>Name :</label>
+                                <input type="text" id="editName" class="form-input" placeholder="Your name">
+                            </div>
+                            <div class="form-group">
+                                <label>Phone :</label>
+                                <input type="tel" id="editPhone" class="form-input" placeholder="Your phone">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <span class="material-icons-outlined">save</span>
+                                Save Changes
+                            </button>
+                        </form>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
