@@ -158,18 +158,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         function drawNebulaGlow(cx, cy) {
-            // Soft nebula behind the coin
+            // Soft nebula behind the coin — cyan primary
             const g1 = ctx.createRadialGradient(cx, cy, 0, cx, cy, 200);
-            g1.addColorStop(0, 'rgba(255,215,0,0.06)');
-            g1.addColorStop(0.3, 'rgba(255,180,0,0.03)');
-            g1.addColorStop(0.6, 'rgba(100,60,180,0.02)');
+            g1.addColorStop(0, 'rgba(161,250,255,0.06)');
+            g1.addColorStop(0.3, 'rgba(0,229,238,0.03)');
+            g1.addColorStop(0.6, 'rgba(172,137,255,0.02)');
             g1.addColorStop(1, 'transparent');
             ctx.fillStyle = g1;
             ctx.fillRect(cx - 200, cy - 200, 400, 400);
 
             // Subtle purple nebula patch
             const g2 = ctx.createRadialGradient(cx + 100, cy - 80, 0, cx + 100, cy - 80, 160);
-            g2.addColorStop(0, 'rgba(102,60,200,0.04)');
+            g2.addColorStop(0, 'rgba(213,117,255,0.04)');
             g2.addColorStop(1, 'transparent');
             ctx.fillStyle = g2;
             ctx.fillRect(cx - 100, cy - 250, 400, 400);
@@ -193,10 +193,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function drawCursorOrbit() {
             if (mouse.x < 0) return;
-            // Gravitational ring glow
+            // Gravitational ring glow — cyan
             const glow = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 90);
-            glow.addColorStop(0, 'rgba(255,215,0,0.05)');
-            glow.addColorStop(0.5, 'rgba(255,215,0,0.02)');
+            glow.addColorStop(0, 'rgba(161,250,255,0.05)');
+            glow.addColorStop(0.5, 'rgba(161,250,255,0.02)');
             glow.addColorStop(1, 'transparent');
             ctx.fillStyle = glow;
             ctx.fillRect(mouse.x - 90, mouse.y - 90, 180, 180);
@@ -212,18 +212,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     const ta = (t / o.trail.length) * o.alpha * 0.3;
                     ctx.beginPath();
                     ctx.arc(o.trail[t].x, o.trail[t].y, o.r * 0.6, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(255,215,0,${ta})`;
+                    ctx.fillStyle = `rgba(161,250,255,${ta})`;
                     ctx.fill();
                 }
                 // Star
                 ctx.beginPath();
                 ctx.arc(ox, oy, o.r, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255,235,180,${o.alpha})`;
+                ctx.fillStyle = `rgba(200,250,255,${o.alpha})`;
                 ctx.fill();
                 // Tiny glow
                 ctx.beginPath();
                 ctx.arc(ox, oy, o.r * 2, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255,215,0,${o.alpha * 0.15})`;
+                ctx.fillStyle = `rgba(161,250,255,${o.alpha * 0.15})`;
                 ctx.fill();
             });
         }
@@ -232,13 +232,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!coinLoaded) return;
             const pulse = Math.sin(time * 0.015) * 0.08 + 1;
             const size = 100 * pulse;
-            // Outer glow rings
+            // Outer glow rings — cyan
             for (let i = 3; i >= 1; i--) {
                 const glowSize = size + i * 25;
                 const alpha = 0.03 / i;
                 ctx.beginPath();
                 ctx.arc(cx, cy, glowSize / 2, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255,215,0,${alpha})`;
+                ctx.fillStyle = `rgba(161,250,255,${alpha})`;
                 ctx.fill();
             }
             // Draw coin
@@ -345,8 +345,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('regPassword').value;
         const referral = document.getElementById('regReferral').value.trim();
 
-        if (!name || !email || !phone || !password) {
-            document.getElementById('registerError').textContent = 'Please fill all required fields.';
+        if (!name || !email || !phone || !password || !referral) {
+            document.getElementById('registerError').textContent = 'Please fill all required fields, including Referral Code.';
             return;
         }
 
@@ -363,6 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
             phone,
             password,
             referredBy: referral || null,
+            starBalance: 0,
             joinDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         };
 
@@ -398,6 +399,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Welcome
         const welcomeEl = document.getElementById('welcomeHeading');
         if (welcomeEl) welcomeEl.textContent = `Welcome Back, ${user.name}!`;
+
+        // Balance
+        const balanceEl = document.getElementById('walletBalanceAmount');
+        if (balanceEl) balanceEl.textContent = `★ ${(user.starBalance || 0).toLocaleString()}`;
 
         // User IDs
         const idInputs = ['iboUserId', 'ewalletIboId', 'ewalletReqUserId'];
@@ -668,12 +673,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Buy button
         const buyBtn = document.getElementById('buyStarBtn');
+        const paymentModal = document.getElementById('paymentModalOverlay');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const confirmBtn = document.getElementById('confirmPaymentBtn');
+
         if (buyBtn) {
             buyBtn.addEventListener('click', () => {
                 const amount = parseFloat(starInput.value);
                 if (!amount || amount <= 0) { showToast('Enter a valid amount', 'error'); return; }
-                const receive = (amount * STAR_RATE).toLocaleString();
-                showToast(`Purchased ~${receive} StarCoin for $${amount.toLocaleString()}!`);
+                paymentModal.classList.add('active');
+            });
+        }
+
+        if (closeModalBtn) {
+            closeModalBtn.addEventListener('click', () => {
+                paymentModal.classList.remove('active');
+            });
+        }
+
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', () => {
+                const amount = parseFloat(starInput.value);
+                const receive = amount * STAR_RATE;
+                
+                const session = getSession();
+                const users = getUsers();
+                const idx = users.findIndex(u => u.id === session.id);
+                
+                if (idx >= 0) {
+                    users[idx].starBalance = (users[idx].starBalance || 0) + receive;
+                    saveUsers(users);
+                    setSession(users[idx]);
+                    populateDashboard(users[idx]);
+                    
+                    paymentModal.classList.remove('active');
+                    showToast(`Payment Confirmed! ~${receive.toLocaleString()} StarCoin added.`);
+                }
             });
         }
 
@@ -709,20 +744,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const starData = [120, 340, 580, 750, 980, 1250];
         const maxValue = Math.max(...starData) * 1.2;
         ctx.clearRect(0, 0, width, height);
-        ctx.strokeStyle = 'rgba(0,0,0,0.05)'; ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(71,71,78,0.15)'; ctx.lineWidth = 1;
         for (let i = 0; i <= 5; i++) {
             const y = padding.top + (chartHeight / 5) * i;
             ctx.beginPath(); ctx.moveTo(padding.left, y); ctx.lineTo(width - padding.right, y); ctx.stroke();
-            ctx.fillStyle = '#9ca3af'; ctx.font = '11px Inter'; ctx.textAlign = 'right';
+            ctx.fillStyle = '#75757b'; ctx.font = '11px Manrope'; ctx.textAlign = 'right';
             ctx.fillText(Math.round(maxValue - (maxValue / 5) * i).toLocaleString(), padding.left - 10, y + 4);
         }
         months.forEach((m, i) => {
             const x = padding.left + (chartWidth / (months.length - 1)) * i;
-            ctx.fillStyle = '#9ca3af'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
+            ctx.fillStyle = '#75757b'; ctx.font = '11px Manrope'; ctx.textAlign = 'center';
             ctx.fillText(m, x, height - padding.bottom + 24);
         });
-        // Draw line
-        ctx.beginPath(); ctx.strokeStyle = 'rgb(67,233,123)'; ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+        // Draw line — neon cyan
+        ctx.beginPath(); ctx.strokeStyle = 'rgb(161,250,255)'; ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
         starData.forEach((v, i) => {
             const x = padding.left + (chartWidth / (starData.length - 1)) * i;
             const y = padding.top + chartHeight - (v / maxValue) * chartHeight;
@@ -732,19 +767,19 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.lineTo(padding.left + chartWidth, padding.top + chartHeight);
         ctx.lineTo(padding.left, padding.top + chartHeight); ctx.closePath();
         const gradient = ctx.createLinearGradient(0, padding.top, 0, padding.top + chartHeight);
-        gradient.addColorStop(0, 'rgba(67,233,123,0.15)'); gradient.addColorStop(1, 'rgba(67,233,123,0.01)');
+        gradient.addColorStop(0, 'rgba(161,250,255,0.15)'); gradient.addColorStop(1, 'rgba(161,250,255,0.01)');
         ctx.fillStyle = gradient; ctx.fill();
         starData.forEach((v, i) => {
             const x = padding.left + (chartWidth / (starData.length - 1)) * i;
             const y = padding.top + chartHeight - (v / maxValue) * chartHeight;
-            ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fillStyle = 'rgba(67,233,123,0.15)'; ctx.fill();
-            ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fillStyle = 'rgb(67,233,123)'; ctx.fill();
-            ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.stroke();
+            ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fillStyle = 'rgba(161,250,255,0.15)'; ctx.fill();
+            ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fillStyle = 'rgb(161,250,255)'; ctx.fill();
+            ctx.strokeStyle = '#1e1f26'; ctx.lineWidth = 2; ctx.stroke();
         });
         // Legend
         ctx.beginPath(); ctx.arc(width - padding.right - 80, 15, 5, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgb(67,233,123)'; ctx.fill();
-        ctx.fillStyle = '#6b7280'; ctx.font = '12px Inter'; ctx.textAlign = 'left';
+        ctx.fillStyle = 'rgb(161,250,255)'; ctx.fill();
+        ctx.fillStyle = '#abaab1'; ctx.font = '12px Space Grotesk'; ctx.textAlign = 'left';
         ctx.fillText('StarCoin', width - padding.right - 70, 19);
     }
 });

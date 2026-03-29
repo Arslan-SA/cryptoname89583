@@ -7,7 +7,7 @@
     <title>StarCoin | Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -556,7 +556,7 @@
                     <div class="card animate-in" style="--delay: 0.1s">
                         <div class="wallet-balance-display">
                             <span class="wallet-balance-label">Current Balance</span>
-                            <span class="wallet-balance-amount">★ 500</span>
+                            <span class="wallet-balance-amount" id="walletBalanceAmount">★ 0</span>
                             <span class="wallet-balance-usd">≈ $425.00 USD</span>
                         </div>
                     </div>
@@ -801,6 +801,37 @@
 
     <!-- Toast Notification -->
     <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Payment Modal -->
+    <div class="modal-overlay" id="paymentModalOverlay">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h2>Complete Purchase</h2>
+                <button class="modal-close" id="closeModalBtn">
+                    <span class="material-icons-outlined">close</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-instruction">Scan the QR code below to complete your USDT payment.</p>
+                <div class="qr-container">
+                    <img src="qr_code.png" alt="Payment QR Code" class="payment-qr">
+                </div>
+                <div class="wallet-details">
+                    <div class="address-box">
+                        <span class="label">Wallet Address:</span>
+                        <span class="wallet-address">0x4fbF173F95F62270CBCcEa4D11135fE469b45128</span>
+                    </div>
+                    <div class="network-box">
+                        <span class="network-label">usdt (bep20)</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-lg btn-confirm-payment" id="confirmPaymentBtn">
+                    <span class="material-icons-outlined">check_circle</span>
+                    Confirm Payment
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>
