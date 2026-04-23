@@ -1,62 +1,61 @@
 /* ==========================================
-   StarCoin Dashboard - JavaScript v2
+   StarCoin Dashboard — JavaScript v3
+   Now connected to Express/SQLite Backend API
    ========================================== */
 
 // ==========================================
-// AUTH & USER MANAGEMENT
+// API Helper
 // ==========================================
-const AUTH_KEY = 'starcoin_users';
-const SESSION_KEY = 'starcoin_session';
+const API_BASE = '/api';
 
-function getUsers() {
-    return JSON.parse(localStorage.getItem(AUTH_KEY) || '[]');
+async function api(endpoint, options = {}) {
+    const token = localStorage.getItem('starcoin_token');
+    const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        ...options.headers
+    };
+
+    try {
+        const res = await fetch(`${API_BASE}${endpoint}`, {
+            ...options,
+            headers
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.error || `API error: ${res.status}`);
+        }
+
+        return data;
+    } catch (err) {
+        if (err.message.includes('Token expired') || err.message.includes('Access denied') || err.message.includes('Invalid token')) {
+            localStorage.removeItem('starcoin_token');
+            localStorage.removeItem('starcoin_user');
+            location.reload();
+        }
+        throw err;
+    }
 }
-function saveUsers(users) {
-    localStorage.setItem(AUTH_KEY, JSON.stringify(users));
+
+// Session helpers
+function getToken() {
+    return localStorage.getItem('starcoin_token');
 }
-function getSession() {
-    return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+function getUser() {
+    return JSON.parse(localStorage.getItem('starcoin_user') || 'null');
 }
-function setSession(user) {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+function setAuth(user, token) {
+    localStorage.setItem('starcoin_token', token);
+    localStorage.setItem('starcoin_user', JSON.stringify(user));
 }
-function clearSession() {
-    localStorage.removeItem(SESSION_KEY);
-}
-function generateUserId() {
-    return 'SC' + Math.floor(100000 + Math.random() * 900000);
+function clearAuth() {
+    localStorage.removeItem('starcoin_token');
+    localStorage.removeItem('starcoin_user');
 }
 function generateReferralLink(userId) {
-    const base = window.location.origin + window.location.pathname;
-    return base + '?ref=' + userId;
-}
-
-// Seed demo users if none exist
-function seedDemoData(currentUser) {
-    const users = getUsers();
-    const hasA = users.find(u => u.name === 'User A');
-    if (!hasA) {
-        const userA = {
-            id: 'SC482910',
-            name: 'User A',
-            email: 'usera@demo.com',
-            phone: '9999999901',
-            password: 'demo123',
-            referredBy: currentUser.id,
-            joinDate: 'Mar 20, 2026'
-        };
-        const userB = {
-            id: 'SC593021',
-            name: 'User B',
-            email: 'userb@demo.com',
-            phone: '9999999902',
-            password: 'demo123',
-            referredBy: 'SC482910',
-            joinDate: 'Mar 22, 2026'
-        };
-        users.push(userA, userB);
-        saveUsers(users);
-    }
+    return `${window.location.origin}?ref=${userId}`;
 }
 
 // ==========================================
@@ -71,14 +70,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const refCode = urlParams.get('ref');
 
     // Check session
-    const session = getSession();
-    if (session) {
-        showApp(session);
+    const token = getToken();
+    const user = getUser();
+    if (token && user) {
+        verifyAndShowApp(user);
     } else {
         showLogin();
         if (refCode) {
             document.getElementById('regReferral').value = refCode;
             switchTab('register');
+        }
+    }
+
+    // Verify token is still valid, then show app
+    async function verifyAndShowApp(cachedUser) {
+        try {
+            const result = await api('/auth/me');
+            setAuth(result.data.user, getToken());
+            showApp(result.data.user);
+        } catch {
+            // Token invalid, show login
+            clearAuth();
+            showLogin();
         }
     }
 
@@ -98,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let coinLoaded = false;
         let time = 0;
 
-        // Load StarCoin image
         const img = new Image();
         img.src = 'starcoin.png';
         img.onload = () => { coinImg = img; coinLoaded = true; };
@@ -127,12 +139,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     alpha: 0,
                     twinkleSpeed: Math.random() * 0.02 + 0.005,
                     twinkleOffset: Math.random() * Math.PI * 2,
-                    // color hue: mostly white, some blue-ish, some gold
                     hue: Math.random() < 0.15 ? 45 : (Math.random() < 0.3 ? 220 : 0),
                     sat: Math.random() < 0.3 ? Math.random() * 40 + 20 : 0
                 });
             }
-            // Create orbiter stars (stars that orbit cursor)
             orbiters = [];
             for (let i = 0; i < 24; i++) {
                 orbiters.push({
@@ -146,7 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Mouse tracking relative to panel
         panel.addEventListener('mousemove', (e) => {
             const rect = panel.getBoundingClientRect();
             mouse.x = e.clientX - rect.left;
@@ -158,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         function drawNebulaGlow(cx, cy) {
-            // Soft nebula behind the coin — cyan primary
             const g1 = ctx.createRadialGradient(cx, cy, 0, cx, cy, 200);
             g1.addColorStop(0, 'rgba(161,250,255,0.06)');
             g1.addColorStop(0.3, 'rgba(0,229,238,0.03)');
@@ -167,7 +175,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.fillStyle = g1;
             ctx.fillRect(cx - 200, cy - 200, 400, 400);
 
-            // Subtle purple nebula patch
             const g2 = ctx.createRadialGradient(cx + 100, cy - 80, 0, cx + 100, cy - 80, 160);
             g2.addColorStop(0, 'rgba(213,117,255,0.04)');
             g2.addColorStop(1, 'transparent');
@@ -181,7 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.arc(x, y, r, 0, Math.PI * 2);
             ctx.fillStyle = color;
             ctx.fill();
-            // Glow
             if (r > 1) {
                 ctx.beginPath();
                 ctx.arc(x, y, r * 2.5, 0, Math.PI * 2);
@@ -193,7 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function drawCursorOrbit() {
             if (mouse.x < 0) return;
-            // Gravitational ring glow — cyan
             const glow = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 90);
             glow.addColorStop(0, 'rgba(161,250,255,0.05)');
             glow.addColorStop(0.5, 'rgba(161,250,255,0.02)');
@@ -205,7 +210,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 o.angle += o.speed;
                 const ox = mouse.x + Math.cos(o.angle) * o.dist;
                 const oy = mouse.y + Math.sin(o.angle) * o.dist;
-                // Trail
                 o.trail.push({ x: ox, y: oy });
                 if (o.trail.length > 6) o.trail.shift();
                 for (let t = 0; t < o.trail.length; t++) {
@@ -215,12 +219,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     ctx.fillStyle = `rgba(161,250,255,${ta})`;
                     ctx.fill();
                 }
-                // Star
                 ctx.beginPath();
                 ctx.arc(ox, oy, o.r, 0, Math.PI * 2);
                 ctx.fillStyle = `rgba(200,250,255,${o.alpha})`;
                 ctx.fill();
-                // Tiny glow
                 ctx.beginPath();
                 ctx.arc(ox, oy, o.r * 2, 0, Math.PI * 2);
                 ctx.fillStyle = `rgba(161,250,255,${o.alpha * 0.15})`;
@@ -232,7 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!coinLoaded) return;
             const pulse = Math.sin(time * 0.015) * 0.08 + 1;
             const size = 100 * pulse;
-            // Outer glow rings — cyan
             for (let i = 3; i >= 1; i--) {
                 const glowSize = size + i * 25;
                 const alpha = 0.03 / i;
@@ -241,14 +242,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.fillStyle = `rgba(161,250,255,${alpha})`;
                 ctx.fill();
             }
-            // Draw coin
             ctx.save();
             ctx.globalAlpha = 0.9;
             ctx.drawImage(coinImg, cx - size / 2, cy - size / 2, size, size);
             ctx.restore();
         }
 
-        // Attract nearby stars toward cursor
         function attractStar(star) {
             if (mouse.x < 0) return;
             const dx = mouse.x - star.x;
@@ -257,7 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (dist < 150) {
                 const force = (150 - dist) / 150;
                 const angle = Math.atan2(dy, dx);
-                // Push slightly toward cursor orbit
                 star.x += Math.cos(angle + Math.PI / 2) * force * 0.3;
                 star.y += Math.sin(angle + Math.PI / 2) * force * 0.3;
                 star.alpha = Math.min(1, star.baseAlpha + force * 0.5);
@@ -269,7 +267,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             ctx.clearRect(0, 0, W, H);
 
-            // Background gradient
             const bg = ctx.createLinearGradient(0, 0, W, H);
             bg.addColorStop(0, '#030510');
             bg.addColorStop(0.5, '#060a1a');
@@ -281,7 +278,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const coinCY = H * 0.42;
             drawNebulaGlow(coinCX, coinCY);
 
-            // Draw stars
             stars.forEach(s => {
                 s.alpha = s.baseAlpha + Math.sin(time * s.twinkleSpeed + s.twinkleOffset) * 0.2;
                 attractStar(s);
@@ -318,59 +314,69 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // LOGIN FORM
+    // LOGIN FORM — API call
     // ==========================================
-    document.getElementById('loginForm').addEventListener('submit', (e) => {
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPassword').value;
-        const users = getUsers();
-        const user = users.find(u => u.email === email && u.password === password);
-        if (user) {
-            setSession(user);
-            showApp(user);
-        } else {
-            document.getElementById('loginError').textContent = 'Invalid email or password.';
+        const errorEl = document.getElementById('loginError');
+        const btn = document.getElementById('loginBtn');
+
+        btn.disabled = true;
+        btn.querySelector('span:first-child').textContent = 'Signing In...';
+
+        try {
+            const result = await api('/auth/login', {
+                method: 'POST',
+                body: JSON.stringify({ email, password })
+            });
+
+            setAuth(result.data.user, result.data.token);
+            showApp(result.data.user);
+        } catch (err) {
+            errorEl.textContent = err.message || 'Invalid email or password.';
+        } finally {
+            btn.disabled = false;
+            btn.querySelector('span:first-child').textContent = 'Sign In';
         }
     });
 
     // ==========================================
-    // REGISTER FORM
+    // REGISTER FORM — API call
     // ==========================================
-    document.getElementById('registerForm').addEventListener('submit', (e) => {
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = document.getElementById('regName').value.trim();
         const email = document.getElementById('regEmail').value.trim();
         const phone = document.getElementById('regPhone').value.trim();
         const password = document.getElementById('regPassword').value;
-        const referral = document.getElementById('regReferral').value.trim();
+        const referralCode = document.getElementById('regReferral').value.trim();
+        const errorEl = document.getElementById('registerError');
+        const btn = document.getElementById('registerBtn');
 
-        if (!name || !email || !phone || !password || !referral) {
-            document.getElementById('registerError').textContent = 'Please fill all required fields, including Referral Code.';
+        if (!name || !email || !phone || !password || !referralCode) {
+            errorEl.textContent = 'Please fill all required fields, including Referral Code.';
             return;
         }
 
-        const users = getUsers();
-        if (users.find(u => u.email === email)) {
-            document.getElementById('registerError').textContent = 'Email already registered.';
-            return;
+        btn.disabled = true;
+        btn.querySelector('span:first-child').textContent = 'Creating Account...';
+
+        try {
+            const result = await api('/auth/register', {
+                method: 'POST',
+                body: JSON.stringify({ name, email, phone, password, referralCode })
+            });
+
+            setAuth(result.data.user, result.data.token);
+            showApp(result.data.user);
+        } catch (err) {
+            errorEl.textContent = err.message || 'Registration failed.';
+        } finally {
+            btn.disabled = false;
+            btn.querySelector('span:first-child').textContent = 'Create Account';
         }
-
-        const newUser = {
-            id: generateUserId(),
-            name,
-            email,
-            phone,
-            password,
-            referredBy: referral || null,
-            starBalance: 0,
-            joinDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-        };
-
-        users.push(newUser);
-        saveUsers(users);
-        setSession(newUser);
-        showApp(newUser);
     });
 
     // ==========================================
@@ -387,45 +393,40 @@ document.addEventListener('DOMContentLoaded', () => {
         loginScreen.style.display = 'none';
         appWrapper.classList.remove('hidden');
         appWrapper.style.display = '';
-        seedDemoData(user);
         populateDashboard(user);
-        initAppLogic();
+        initAppLogic(user);
     }
 
     // ==========================================
-    // POPULATE DASHBOARD
+    // POPULATE DASHBOARD — from API
     // ==========================================
-    function populateDashboard(user) {
-        // Welcome
+    async function populateDashboard(user) {
+        // Set initial data from user object
         const welcomeEl = document.getElementById('welcomeHeading');
         if (welcomeEl) welcomeEl.textContent = `Welcome Back, ${user.name}!`;
 
-        // Balance
         const balanceEl = document.getElementById('walletBalanceAmount');
-        if (balanceEl) balanceEl.textContent = `★ ${(user.starBalance || 0).toLocaleString()}`;
+        if (balanceEl) balanceEl.textContent = `★ ${(user.star_balance || 0).toLocaleString()}`;
 
-        // User IDs
         const idInputs = ['iboUserId', 'ewalletIboId', 'ewalletReqUserId'];
         idInputs.forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.value = user.id;
+            if (el) el.value = user.user_id;
         });
 
-        // Ewallet name
         const ewalletName = document.getElementById('ewalletReqName');
         if (ewalletName) ewalletName.value = user.name;
 
-        // Referral link
         const refInput = document.getElementById('referralLinkInput');
-        if (refInput) refInput.value = generateReferralLink(user.id);
+        if (refInput) refInput.value = generateReferralLink(user.user_id);
 
         // Welcome letter
         const letterName = document.getElementById('letterUserName');
         if (letterName) letterName.textContent = user.name;
         const letterId = document.getElementById('letterUserId');
-        if (letterId) letterId.textContent = user.id;
+        if (letterId) letterId.textContent = user.user_id;
         const letterDate = document.getElementById('letterDate');
-        if (letterDate) letterDate.textContent = user.joinDate || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        if (letterDate) letterDate.textContent = user.join_date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
         // Profile view
         const profileDetails = document.getElementById('profileDetails');
@@ -434,9 +435,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="profile-row"><span class="profile-label">Name</span><span class="profile-value">${user.name}</span></div>
                 <div class="profile-row"><span class="profile-label">Email</span><span class="profile-value">${user.email}</span></div>
                 <div class="profile-row"><span class="profile-label">Phone</span><span class="profile-value">${user.phone || 'N/A'}</span></div>
-                <div class="profile-row"><span class="profile-label">User ID</span><span class="profile-value">${user.id}</span></div>
-                <div class="profile-row"><span class="profile-label">Joined</span><span class="profile-value">${user.joinDate}</span></div>
-                <div class="profile-row"><span class="profile-label">Referral Link</span><span class="profile-value" style="font-size:12px;word-break:break-all">${generateReferralLink(user.id)}</span></div>
+                <div class="profile-row"><span class="profile-label">User ID</span><span class="profile-value">${user.user_id}</span></div>
+                <div class="profile-row"><span class="profile-label">Joined</span><span class="profile-value">${user.join_date}</span></div>
+                <div class="profile-row"><span class="profile-label">Star Balance</span><span class="profile-value">★ ${(user.star_balance || 0).toLocaleString()}</span></div>
+                <div class="profile-row"><span class="profile-label">Referral Link</span><span class="profile-value" style="font-size:12px;word-break:break-all">${generateReferralLink(user.user_id)}</span></div>
             `;
         }
 
@@ -446,52 +448,157 @@ document.addEventListener('DOMContentLoaded', () => {
         const editPhone = document.getElementById('editPhone');
         if (editPhone) editPhone.value = user.phone || '';
 
-        // Render trees
-        renderTree('treeContainer', user);
-        renderTree('treeContainerPage', user);
+        // Fetch dashboard data from API
+        try {
+            const dashResult = await api('/users/dashboard');
+            const dash = dashResult.data;
 
-        // Team count
-        const users = getUsers();
-        const directRefs = users.filter(u => u.referredBy === user.id);
-        const getAllDownline = (userId) => {
-            const direct = users.filter(u => u.referredBy === userId);
-            let total = direct.length;
-            direct.forEach(d => { total += getAllDownline(d.id); });
-            return total;
-        };
-        const totalTeam = getAllDownline(user.id);
-        const teamStat = document.getElementById('teamSizeStat');
-        if (teamStat) teamStat.dataset.count = totalTeam;
-        const refStat = document.getElementById('referralsStat');
-        if (refStat) refStat.dataset.count = directRefs.length;
+            // Update stat cards
+            const balStat = document.querySelector('[data-count]');
+            if (balStat && balStat.dataset.prefix === '★ ') {
+                balStat.dataset.count = dash.starBalance || 0;
+            }
+
+            const teamStat = document.getElementById('teamSizeStat');
+            if (teamStat) teamStat.dataset.count = dash.totalTeam || 0;
+            const refStat = document.getElementById('referralsStat');
+            if (refStat) refStat.dataset.count = dash.directReferrals || 0;
+
+            // Update wallet balance
+            if (balanceEl) balanceEl.textContent = `★ ${(dash.starBalance || 0).toLocaleString()}`;
+
+            // Update USD equivalent
+            const usdEl = document.querySelector('.wallet-balance-usd');
+            if (usdEl) {
+                const usdValue = (dash.starBalance / 150).toFixed(2);
+                usdEl.textContent = `≈ $${parseFloat(usdValue).toLocaleString()} USD`;
+            }
+
+            // Notification badge
+            const badge = document.querySelector('.notification-badge');
+            if (badge) {
+                badge.textContent = dash.unreadNotifications || 0;
+                badge.style.display = dash.unreadNotifications > 0 ? 'flex' : 'none';
+            }
+
+            // Activity list
+            if (dash.activities && dash.activities.length > 0) {
+                const activityList = document.querySelector('.activity-list');
+                if (activityList) {
+                    activityList.innerHTML = dash.activities.map(a => `
+                        <div class="activity-item">
+                            <div class="activity-dot" style="background: ${a.color}"></div>
+                            <div class="activity-content">
+                                <p><strong>${a.action}</strong> — ${a.details || ''}</p>
+                                <span class="activity-time">${a.time}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        } catch (err) {
+            console.warn('Failed to load dashboard data:', err.message);
+        }
+
+        // Fetch and render referral tree from API
+        try {
+            const treeResult = await api('/users/team/tree');
+            if (treeResult.data.tree) {
+                renderTree('treeContainer', treeResult.data.tree, user.user_id);
+                renderTree('treeContainerPage', treeResult.data.tree, user.user_id);
+            }
+        } catch (err) {
+            console.warn('Failed to load team tree:', err.message);
+        }
+
+        // Fetch and render direct referrals from API
+        try {
+            const directResult = await api('/users/team/direct');
+            const directBody = document.getElementById('directTeamBody');
+            if (directBody && directResult.data.referrals) {
+                directBody.innerHTML = directResult.data.referrals.map((ref, i) => `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td>${ref.name}</td>
+                        <td>${ref.user_id}</td>
+                        <td>${ref.join_date}</td>
+                        <td><span class="badge badge-success">${ref.status === 'active' ? 'Active' : ref.status}</span></td>
+                    </tr>
+                `).join('');
+            }
+        } catch (err) {
+            console.warn('Failed to load direct referrals:', err.message);
+        }
+
+        // Fetch news from API
+        try {
+            const newsResult = await api('/content/news');
+            const newsGrid = document.querySelector('#page-news .news-grid');
+            if (newsGrid && newsResult.data.news) {
+                newsGrid.innerHTML = newsResult.data.news.map((item, i) => `
+                    <div class="news-card animate-in" style="--delay: ${0.1 * (i + 1)}s">
+                        <div class="news-image" style="background: ${item.gradient};">
+                            <span class="material-icons-outlined">${item.icon}</span>
+                        </div>
+                        <div class="news-content">
+                            <span class="news-date">${item.formattedDate}</span>
+                            <h3>${item.title}</h3>
+                            <p>${item.content}</p>
+                            <a href="#" class="news-link">Read More →</a>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        } catch (err) {
+            console.warn('Failed to load news:', err.message);
+        }
+
+        // Fetch promotions from API
+        try {
+            const promoResult = await api('/content/promotions');
+            const promoGrid = document.querySelector('#page-promotion .promotions-grid');
+            if (promoGrid && promoResult.data.promotions) {
+                promoGrid.innerHTML = promoResult.data.promotions.map((item, i) => `
+                    <div class="promo-card animate-in" style="--delay: ${0.1 * (i + 1)}s">
+                        <div class="promo-banner" style="background: ${item.gradient};">
+                            <span class="promo-tag">${item.tag}</span>
+                            <h3>${item.title}</h3>
+                            <p>${item.description}</p>
+                        </div>
+                        <div class="promo-details">
+                            <span class="promo-validity">${item.formattedValidity}</span>
+                            <button class="btn btn-outline btn-sm">Learn More</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        } catch (err) {
+            console.warn('Failed to load promotions:', err.message);
+        }
     }
 
     // ==========================================
-    // RENDER REFERRAL TREE
+    // RENDER REFERRAL TREE — from API data
     // ==========================================
-    function renderTree(containerId, rootUser) {
+    function renderTree(containerId, treeData, currentUserId) {
         const container = document.getElementById(containerId);
-        if (!container) return;
-        const users = getUsers();
+        if (!container || !treeData) return;
 
-        function buildNode(userId) {
-            const user = users.find(u => u.id === userId) || rootUser;
-            const children = users.filter(u => u.referredBy === userId);
-            const isRoot = userId === rootUser.id;
-
+        function buildNode(node) {
+            const isRoot = node.userId === currentUserId;
             let html = `<div class="tree-node">`;
             html += `<div class="tree-node-content ${isRoot ? 'root' : ''}">`;
-            html += `<div class="tree-node-name">${isRoot ? user.name + ' (You)' : user.name}</div>`;
-            html += `<div class="tree-node-id">${user.id}</div>`;
+            html += `<div class="tree-node-name">${isRoot ? node.name + ' (You)' : node.name}</div>`;
+            html += `<div class="tree-node-id">${node.userId}</div>`;
             html += `</div>`;
 
-            if (children.length > 0) {
+            if (node.children && node.children.length > 0) {
                 html += `<div class="tree-connector"></div>`;
                 html += `<div class="tree-children">`;
-                children.forEach(child => {
+                node.children.forEach(child => {
                     html += `<div style="display:flex;flex-direction:column;align-items:center">`;
                     html += `<div class="tree-branch-connector"></div>`;
-                    html += buildNode(child.id);
+                    html += buildNode(child);
                     html += `</div>`;
                 });
                 html += `</div>`;
@@ -500,13 +607,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return html;
         }
 
-        container.innerHTML = buildNode(rootUser.id);
+        container.innerHTML = buildNode(treeData);
     }
 
     // ==========================================
     // APP LOGIC (navigation, charts, etc)
     // ==========================================
-    function initAppLogic() {
+    function initAppLogic(currentUser) {
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
         const menuToggle = document.getElementById('menuToggle');
@@ -611,37 +718,67 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Logout
+        // Logout — clear token
         document.getElementById('logoutBtn').addEventListener('click', (e) => {
             e.preventDefault();
-            clearSession();
+            clearAuth();
             showToast('Logging out...', 'logout');
             setTimeout(() => location.reload(), 1000);
         });
 
-        // E-wallet form
+        // E-wallet form — API call
         const ewalletForm = document.getElementById('ewalletRequestForm');
         if (ewalletForm) {
-            ewalletForm.addEventListener('submit', (e) => {
-                e.preventDefault(); showToast('Coin credit request submitted!');
+            ewalletForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const amountInput = ewalletForm.querySelector('input[type="number"]');
+                const paymentSelect = ewalletForm.querySelector('select');
+                const referenceInput = ewalletForm.querySelectorAll('.form-input')[4]; // reference no input
+
+                const amountStar = parseFloat(amountInput?.value) || 0;
+                const paymentMethod = paymentSelect?.value || '';
+                const referenceNo = referenceInput?.value?.trim() || '';
+
+                if (!amountStar || paymentMethod === 'Select Mode Of Payment' || !referenceNo) {
+                    showToast('Please fill all fields correctly.', 'error');
+                    return;
+                }
+
+                try {
+                    await api('/wallet/request-credit', {
+                        method: 'POST',
+                        body: JSON.stringify({ amountStar, paymentMethod, referenceNo })
+                    });
+                    showToast('Coin credit request submitted!');
+                    ewalletForm.reset();
+                    // Re-fill readonly fields
+                    document.getElementById('ewalletReqUserId').value = currentUser.user_id;
+                    document.getElementById('ewalletReqName').value = currentUser.name;
+                } catch (err) {
+                    showToast(err.message || 'Request failed.', 'error');
+                }
             });
         }
 
-        // Edit profile
+        // Edit profile — API call
         const editForm = document.getElementById('editProfileForm');
         if (editForm) {
-            editForm.addEventListener('submit', (e) => {
+            editForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const session = getSession();
-                const users = getUsers();
-                const idx = users.findIndex(u => u.id === session.id);
-                if (idx >= 0) {
-                    users[idx].name = document.getElementById('editName').value.trim();
-                    users[idx].phone = document.getElementById('editPhone').value.trim();
-                    saveUsers(users);
-                    setSession(users[idx]);
-                    populateDashboard(users[idx]);
+                const name = document.getElementById('editName').value.trim();
+                const phone = document.getElementById('editPhone').value.trim();
+
+                try {
+                    const result = await api('/users/profile', {
+                        method: 'PUT',
+                        body: JSON.stringify({ name, phone })
+                    });
+
+                    setAuth(result.data.user, getToken());
+                    populateDashboard(result.data.user);
                     showToast('Profile updated!');
+                } catch (err) {
+                    showToast(err.message || 'Profile update failed.', 'error');
                 }
             });
         }
@@ -671,17 +808,29 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Buy button
+        // Buy button — API call
         const buyBtn = document.getElementById('buyStarBtn');
         const paymentModal = document.getElementById('paymentModalOverlay');
         const closeModalBtn = document.getElementById('closeModalBtn');
         const confirmBtn = document.getElementById('confirmPaymentBtn');
+        let currentTransactionId = null;
 
         if (buyBtn) {
-            buyBtn.addEventListener('click', () => {
+            buyBtn.addEventListener('click', async () => {
                 const amount = parseFloat(starInput.value);
                 if (!amount || amount <= 0) { showToast('Enter a valid amount', 'error'); return; }
-                paymentModal.classList.add('active');
+
+                try {
+                    const result = await api('/wallet/buy', {
+                        method: 'POST',
+                        body: JSON.stringify({ amountUsd: amount, paymentMethod: 'USDT' })
+                    });
+
+                    currentTransactionId = result.data.transactionId;
+                    paymentModal.classList.add('active');
+                } catch (err) {
+                    showToast(err.message || 'Purchase failed.', 'error');
+                }
             });
         }
 
@@ -692,22 +841,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (confirmBtn) {
-            confirmBtn.addEventListener('click', () => {
-                const amount = parseFloat(starInput.value);
-                const receive = amount * STAR_RATE;
-                
-                const session = getSession();
-                const users = getUsers();
-                const idx = users.findIndex(u => u.id === session.id);
-                
-                if (idx >= 0) {
-                    users[idx].starBalance = (users[idx].starBalance || 0) + receive;
-                    saveUsers(users);
-                    setSession(users[idx]);
-                    populateDashboard(users[idx]);
-                    
+            confirmBtn.addEventListener('click', async () => {
+                if (!currentTransactionId) {
+                    showToast('No pending transaction.', 'error');
+                    return;
+                }
+
+                confirmBtn.disabled = true;
+                confirmBtn.querySelector('span').textContent = 'done';
+
+                try {
+                    const result = await api('/wallet/confirm-payment', {
+                        method: 'POST',
+                        body: JSON.stringify({ transactionId: currentTransactionId })
+                    });
+
                     paymentModal.classList.remove('active');
-                    showToast(`Payment Confirmed! ~${receive.toLocaleString()} StarCoin added.`);
+                    showToast(result.message || 'Please wait 24 hours, your coin will be credited.', 'schedule');
+
+                    currentTransactionId = null;
+                } catch (err) {
+                    showToast(err.message || 'Payment confirmation failed.', 'error');
+                } finally {
+                    confirmBtn.disabled = false;
+                    confirmBtn.querySelector('span').textContent = 'check_circle';
                 }
             });
         }
@@ -756,7 +913,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.fillStyle = '#75757b'; ctx.font = '11px Manrope'; ctx.textAlign = 'center';
             ctx.fillText(m, x, height - padding.bottom + 24);
         });
-        // Draw line — neon cyan
         ctx.beginPath(); ctx.strokeStyle = 'rgb(161,250,255)'; ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
         starData.forEach((v, i) => {
             const x = padding.left + (chartWidth / (starData.length - 1)) * i;
@@ -776,7 +932,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fillStyle = 'rgb(161,250,255)'; ctx.fill();
             ctx.strokeStyle = '#1e1f26'; ctx.lineWidth = 2; ctx.stroke();
         });
-        // Legend
         ctx.beginPath(); ctx.arc(width - padding.right - 80, 15, 5, 0, Math.PI * 2);
         ctx.fillStyle = 'rgb(161,250,255)'; ctx.fill();
         ctx.fillStyle = '#abaab1'; ctx.font = '12px Space Grotesk'; ctx.textAlign = 'left';
@@ -784,4 +939,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-console.log('⭐ StarCoin Dashboard v2 initialized');
+console.log('⭐ StarCoin Dashboard v3 — Connected to Backend API');

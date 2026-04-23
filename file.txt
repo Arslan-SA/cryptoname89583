@@ -1,0 +1,9 @@
+user {
+    Name -
+    email - 
+    phone-
+}
+
+activie {
+    pusrchade- 
+}
